@@ -9,7 +9,7 @@ __pycache__/
 
 grad-cam-qwen.py
 rough.py
-rough2.py
+#rough2.py
 
 # Distribution / packaging
 .Python
