@@ -1,13 +1,4 @@
-#Copy of Multi3Hate: Multimodal, Multilingual, and Multicultural Hate Speech Detection with Vision–Language Models
-
-## We published Multi3Hate on Huggingface! Check it out [here](https://huggingface.co/datasets/MinhDucBui/Multi3Hate).
-
-
-**Multi3Hate** dataset repository, introduced in our paper:
-
-> **Multi3Hate: Advancing Multimodal, Multilingual, and Multicultural Hate Speech Detection with Vision–Language Models**
-
-This repository contains all the resources and code used in the paper.
+# Copy of Multi3Hate: Multimodal, Multilingual, and Multicultural Hate Speech Detection with Vision–Language Models
 
 ## 🗂️ Dataset Structure
 The dataset is organized in the `data/` folder:
@@ -30,15 +21,10 @@ pip install -r requirements-new.txt
 Use the scripts in `vlm/inference/` to run inference with Vision-Language Models (VLMs). Below are commands for each available model:
 
 ```bash
-python vlm/inference/llava_onevision.py
-python vlm/inference/internvl2.py
 python vlm/inference/qwen2.py 
-python vlm/inference/gpt_4o.py
 python vlm/inference/gemini_pro.py
 ```
-Inference Tested on Two Scripts:
-1. python vlm/inference/qwen2.py here small local model is used on qwen2.py file
-2. python vlm/inference/gemini_pro.py here API key along with different model is used on python gemini_pro.py
+
 
 > **Important Notes**:
 > - For closed-source models, provide a valid API key.
