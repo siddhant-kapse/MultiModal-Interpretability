@@ -44,7 +44,9 @@ def get_device_map() -> str:
 
 
 def name_output_file(model_path, output_folder, language, add_caption):
-    model_postfix = model_path.split("/")[-3]
+    #model_postfix = model_path.split("/")[-3]
+    parts = model_path.split("/")
+    model_postfix = parts[-3] if len(parts) >= 3 else parts[-1]
     if add_caption:
         model_postfix = model_postfix + "_caption"
     if PREFIX:
@@ -106,11 +108,17 @@ def pipeline_inference(model_path, languages, input_creator, model_creator, mode
                 # Check if the file is an image by its extension
                 if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff')):
                     image_path = os.path.join(root, file)
-                    image_path_check = int(
-                        image_path.split("/")[-1].split(".")[0])
+                    # Use os.path.basename to get the filename (e.g., "222.jpg") robustly
+                    filename = os.path.basename(image_path)
+                    # Now split the filename to get the ID (e.g., "222")
+                    image_path_check = int(filename.split(".")[0])
                     if image_path_check in list(df["Meme ID"]):
                         image_paths.append(image_path)
+        print("Total images found:", len(image_paths))
 
+        image_paths = image_paths[:1] # <--- ADD THIS LINE HERE
+        print(f"--- RUNNING IN TEST MODE ON {len(image_paths)} IMAGES ONLY ---") # <--- (Optional) Add this to confirm
+        
         # All prompts
         all_prompts = []
         for prompt in PROMPTS:

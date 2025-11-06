@@ -6,6 +6,11 @@ __pycache__/
 # C extensions
 *.so
 
+
+grad-cam-qwen.py
+rough.py
+rough2.py
+
 # Distribution / packaging
 .Python
 build/

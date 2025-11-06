@@ -1,0 +1,91 @@
+ID,prompt,response
+memes\hi\Advicejew\222,0,"
+You are a helpful assistant.
+user
+Definition of Hate Speech:
+
+Any kind of communication [...], that attacks or uses pejorative or discriminatory language with reference to a person or a group on the basis of who they are, in other words, based on their religion, ethnicity, nationality, race, colour, descent, gender or other identity factor.
+
+Answer if this meme is hate or not with a single alphabet letter among given answer choices a and b.
+Meme: 
+Choose:
+a: Hate
+b: Non-hate
+
+assistant
+a"
+memes\hi\Advicejew\222,1,"
+You are a helpful assistant.
+user
+Definition of Hate Speech:
+
+Any kind of communication [...], that attacks or uses pejorative or discriminatory language with reference to a person or a group on the basis of who they are, in other words, based on their religion, ethnicity, nationality, race, colour, descent, gender or other identity factor.
+
+Answer if this meme is hate or not with a single alphabet letter among given answer choices a and b.
+Meme: 
+Choose:
+a: Non-hate
+b: Hate
+
+assistant
+b"
+memes\hi\Advicejew\222,2,"
+You are a helpful assistant.
+user
+Definition of Hate Speech:
+
+Any kind of communication [...], that attacks or uses pejorative or discriminatory language with reference to a person or a group on the basis of who they are, in other words, based on their religion, ethnicity, nationality, race, colour, descent, gender or other identity factor.
+
+Given a meme from online, answer if it is 'Hate Speech' or 'Non-Hate Speech'. Answer with only one single alphabet between 'a' and 'b', with no other description.
+Meme: 
+Choose:
+a: Hate
+b: Non-hate
+
+assistant
+a"
+memes\hi\Advicejew\222,3,"
+You are a helpful assistant.
+user
+Definition of Hate Speech:
+
+Any kind of communication [...], that attacks or uses pejorative or discriminatory language with reference to a person or a group on the basis of who they are, in other words, based on their religion, ethnicity, nationality, race, colour, descent, gender or other identity factor.
+
+Given a meme from online, answer if it is 'Hate Speech' or 'Non-Hate Speech'. Answer with only one single alphabet between 'a' and 'b', with no other description.
+Meme: 
+Choose:
+a: Non-hate
+b: Hate
+
+assistant
+b"
+memes\hi\Advicejew\222,4,"
+You are a helpful assistant.
+user
+Definition of Hate Speech:
+
+Any kind of communication [...], that attacks or uses pejorative or discriminatory language with reference to a person or a group on the basis of who they are, in other words, based on their religion, ethnicity, nationality, race, colour, descent, gender or other identity factor.
+
+Would you consider this meme as a hate speech? Give an answer in a single alphabet only.
+Meme: 
+Choose:
+a: Hate
+b: Non-hate
+
+assistant
+a"
+memes\hi\Advicejew\222,5,"
+You are a helpful assistant.
+user
+Definition of Hate Speech:
+
+Any kind of communication [...], that attacks or uses pejorative or discriminatory language with reference to a person or a group on the basis of who they are, in other words, based on their religion, ethnicity, nationality, race, colour, descent, gender or other identity factor.
+
+Would you consider this meme as a hate speech? Give an answer in a single alphabet only.
+Meme: 
+Choose:
+a: Non-hate
+b: Hate
+
+assistant
+b"

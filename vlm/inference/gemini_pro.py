@@ -12,7 +12,18 @@ from vlm.inference.utils import pipeline_inference
 
 
 LANGUAGES = ["en", "de", "es", "hi", "zh"]
-API_KEY_GEMINI = "<Your API Key>"
+API_KEY_GEMINI = "xxxxxxxoooooooooo"
+# genai.configure(api_key="AIzaSyCIZOS1Z5eTfWpAE5hi4JRI8YwntBmnOPo")
+
+# try:
+#     models = genai.list_models()
+#     print("✅ API Key is valid!")
+#     print("Available Models:")
+#     for m in models:
+#         print(" -", m.name)
+# except Exception as e:
+#     print("❌ API key problem:", e)
+
 SAFETY_SETTINGS = [
     {
         "category": "HARM_CATEGORY_HARASSMENT",
@@ -80,12 +91,12 @@ def model_creator(model_path):
     # Model Configuration
 
     model_config = genai.GenerationConfig(
-        max_output_tokens=40,
+        max_output_tokens=500,
         temperature=0.0,
     )
     genai.configure(api_key=API_KEY_GEMINI)
     model = genai.GenerativeModel(
-        "gemini-1.5-pro-001", generation_config=model_config)
+        "gemini-2.5-flash", generation_config=model_config, safety_settings=SAFETY_SETTINGS)
     return model
 
 
@@ -94,13 +105,34 @@ def model_inference(prompt, model, processor, unimodal):
 
     response = model.generate_content(prompt, safety_settings=SAFETY_SETTINGS)
     try:
-        # Code that might raise the AttributeError
-        response_text = prompt[0] + prompt[-1] + \
-            "\nAssistant: " + response.text
-    except AttributeError as e:
-        # Handle the AttributeError here
-        print(f"An AttributeError occurred: {e}")
-        response_text = prompt[0] + prompt[-1] + "\nAssistant: " + str(e)
+        response = model.generate_content(prompt, safety_settings=SAFETY_SETTINGS)
+        
+        # --- START ROBUST FIX ---
+        # Check if the response was blocked or is empty
+        if not response.candidates or response.candidates[0].finish_reason.value != 1: # 1 = STOP (success)
+            
+            # Get the block reason (if available)
+            block_reason = "UNKNOWN"
+            if response.prompt_feedback and response.prompt_feedback.block_reason:
+                block_reason = response.prompt_feedback.block_reason.name
+            elif response.candidates:
+                 block_reason = response.candidates[0].finish_reason.name
+
+            print(f"  > [INFO] Response BLOCKED by API. Reason: {block_reason}")
+            final_response_text = f"\nAssistant: BLOCKED (Reason: {block_reason})"
+        
+        else:
+            # If not blocked, safely access the text
+            final_response_text = "\nAssistant: " + response.text
+        # --- END ROBUST FIX ---
+
+        # Add the prompt back for logging
+        response_text = prompt[0] + prompt[-1] + final_response_text
+
+    except Exception as e:
+        # Catch any other weird errors
+        print(f"  > [ERROR] An exception occurred: {e}")
+        response_text = prompt[0] + prompt[-1] + f"\nAssistant: ERROR - {str(e)}"
 
     return response_text
 

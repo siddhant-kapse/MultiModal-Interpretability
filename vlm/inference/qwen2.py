@@ -1,6 +1,8 @@
 import argparse
 from qwen_vl_utils import process_vision_info
-from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
+#from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
+from transformers import AutoModelForVision2Seq, AutoProcessor
+from PIL import Image
 import sys
 import os
 current_script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -42,7 +44,7 @@ def input_creator(all_prompts, image_paths, model_path, df_captions, add_caption
                     "role": "user",
                     "content": [
                         text_prompt_1,
-                        {"type": "image", "image": image_path},
+                        {"type": "image", "image": Image.open(image_path).convert("RGB")},
                         text_prompt_2
                     ],
                 },
@@ -57,7 +59,7 @@ def input_creator(all_prompts, image_paths, model_path, df_captions, add_caption
 
 
 def model_creator(model_path):
-    model = Qwen2VLForConditionalGeneration.from_pretrained(
+    model = AutoModelForVision2Seq.from_pretrained(
         model_path, torch_dtype="auto", device_map="auto"
     )
     # model = None
@@ -77,8 +79,17 @@ def model_inference(prompt, model, processor, unimodal):
         padding=True,
         return_tensors="pt",
     )
-    inputs = inputs.to("cuda")
-    output = model.generate(**inputs, max_new_tokens=40,
+#     inputs = processor(
+#     prompt[0],
+#     return_tensors="pt",
+#     padding=True
+# )
+    # inputs = inputs.to("cuda")
+    import torch
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print("Using device:", device)
+    inputs = inputs.to(device)
+    output = model.generate(**inputs, max_new_tokens=400,
                             do_sample=False, top_k=None)
     response_text = processor.decode(output[0][2:], skip_special_tokens=True)
     return response_text
