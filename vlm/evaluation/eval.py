@@ -21,7 +21,8 @@ np.seterr(divide='ignore', invalid='ignore')
 
 tqdm.pandas()
 
-LANGUAGES = ["de", "en", "es", "hi", "zh"]
+LANGUAGES = ["en"]
+#LANGUAGES = ["de", "en", "es", "hi", "zh"]
 MAPPING = {
     "en": "US",
     "de": "DE",
@@ -30,6 +31,23 @@ MAPPING = {
     "zh": "CN"
 }
 
+def calculate_per_meme_accuracy(df_merged, gt_column_name, predict_column_name):
+    """
+    Calculates the accuracy for each meme by averaging its prompt variations.
+    """
+    # Group by 'Meme ID'. For each meme, calculate the mean accuracy
+    # of its 6 prompts by comparing the GT column to the prediction column.
+    per_meme_acc_series = df_merged.groupby('Meme ID').apply(
+        lambda x: (x[gt_column_name] == x[predict_column_name]).mean() * 100, # as percentage
+        include_groups=False
+    )
+    
+    # Convert the resulting Series (Index='Meme ID', Value=Accuracy)
+    # into a DataFrame with a named column.
+    new_column_name = f"{gt_column_name}_acc"
+    per_meme_acc_df = per_meme_acc_series.reset_index(name=new_column_name)
+    
+    return per_meme_acc_df
 
 def significance_test(row):
     n1 = 6
@@ -252,12 +270,30 @@ def process_response_to_hatespeech(row):
             return 1
 
 
-# Function to calculate accuracy with dynamic column names
+# NEW, FIXED FUNCTION:
 def calculate_group_accuracy(df, group_col, col1, col2):
-    df_group = df.groupby(group_col)
-    accuracy = df_group[[col1, col2]].apply(lambda x: (
-        x[col1] == x[col2]).mean()).reset_index(name='accuracy')
-    return accuracy
+    
+    # 1. Create a new boolean column for the comparison.
+    #    This is much cleaner than using apply().
+    df_calc = df.copy() # Use a copy to avoid SettingWithCopyWarning
+    df_calc['is_correct'] = (df_calc[col1] == df_calc[col2])
+    
+    # 2. Group by the group_col, select our new 'is_correct' column, 
+    #    and calculate the mean for each group.
+    #    This will produce a pandas Series named 'is_correct' 
+    #    where the index is the 'prompt'.
+    accuracy_series = df_calc.groupby(group_col)['is_correct'].mean()
+    
+    # 3. Convert this Series into a DataFrame.
+    #    This will create a DataFrame with two columns:
+    #    - The index column (named 'prompt', or whatever group_col is)
+    #    - The value column (named 'is_correct', from the Series name)
+    accuracy_df = accuracy_series.reset_index()
+    
+    # 4. Rename the 'is_correct' column to 'accuracy'
+    accuracy_df = accuracy_df.rename(columns={'is_correct': 'accuracy'})
+    
+    return accuracy_df
 
 
 def stat_test(df1, df2):
@@ -277,56 +313,125 @@ def calc_acc(df, gt_name, predict_name):
 
     return mean_accuracy, std_accuracy, accuracy_by_group
 
-
 if __name__ == '__main__':
     # Create the argument parser
     parser = argparse.ArgumentParser(
         description='Run pipeline inference with specified model path.')
 
     # Add an argument for MODEL_PATH
-    parser.add_argument('--model_predictions', type=str, required=False,
-                        default='vlm/results/models--llava-hf--llava-onevision-qwen2-72b-ov-hf')
+    parser.add_argument('--model_predictions', type=str, required=True,
+                        help='Path to the FOLDER containing the response CSVs (e.g., "results/Qwen2.5-VL-3B-Instruct")')
     args = parser.parse_args()
-    model_predictions_folder = args.model_predictions
-    df_gt = pd.read_csv(ANNOTATION_PATH)
-    df_gt = df_gt.reset_index()
-    df_gt["Meme ID"] = df_gt["Meme ID"].astype(str)
+    
+    model_predictions_folder = "vlm/" + args.model_predictions
+    
+    try:
+        # Load Ground Truth
+        df_gt = pd.read_csv(ANNOTATION_PATH)
+        df_gt = df_gt.reset_index()
+        df_gt["Meme ID"] = df_gt["Meme ID"].astype(str)
+    except FileNotFoundError:
+        print(f"Error: Ground truth file not found at ANNOTATION_PATH defined in vlm.inference.local_paths")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error loading ground truth: {e}")
+        sys.exit(1)
 
-    latex_preds = {}
-    # Loop over all folders inside the parent folder
+    print(f"--- Starting Evaluation for: {model_predictions_folder} ---")
+
+    # --- DEBUGGING: Add this block ---
+    print("--- DEBUG: Checking for files...")
+    files_found = 0
+    for root, dirs, files in os.walk(model_predictions_folder):
+        print(f"DEBUG: Walking {root}, found dirs: {dirs}, found files: {files}")
+        files_found += len(files)
+    print(f"--- DEBUG: Total files found: {files_found} ---")
+    # --- End of debug block ---
+
+    # This loop is now correct.
+    # It walks the directory and finds the files.
     for root, dirs, files in os.walk(model_predictions_folder):
         for file in files:
-            for language in LANGUAGES:
-                print("----Language: {}-----".format(language))
-                folder_path = os.path.join(root, file)
-                if os.path.exists(folder_path):
-                    df_inference = pd.read_csv(folder_path)
-                else:
+            if not file.startswith('responses_') or not file.endswith('.csv'):
+                continue
+                
+            # Extract the language from the filename
+            # e.g., "responses_en.csv" -> "en"
+            try:
+                language = file.split('_')[-1].split('.')[0]
+                if language not in LANGUAGES:
+                    print(f"Skipping file {file}, unknown language '{language}'")
                     continue
-                df_inference.rename(columns={'ID': 'Meme ID'}, inplace=True)
-                df_inference['answer'] = df_inference['response'].apply(
-                    extract_answer)
-                df_inference['processed_answer'] = df_inference['response'].apply(
-                    mapping_response)
-                df_inference['hate_prediction'] = df_inference.apply(
-                    process_response_to_hatespeech, axis=1)
-                df_inference['response'] = df_inference["response"].str.replace(
-                    "\n", "").str.replace("assistant", "").str[-20:]
-                df_inference = df_inference[[
-                    "Meme ID", "prompt", "response", "answer", "hate_prediction"]]
-                output_path = os.path.join(
-                    root, "processed_responses_" + language + ".csv")
-                df_inference.to_csv(output_path, index=False)
+            except Exception:
+                print(f"Skipping file {file}, could not parse language from name.")
+                continue
 
-                # Evaluation
-                df_inference["Meme ID"] = df_inference["Meme ID"].astype(str)
-                df_inference = pd.merge(df_inference, df_gt, on="Meme ID")
-                # N Invalid Responses
-                n_invalid = sum(df_inference["hate_prediction"] == -1)
-                # Accuracy
-                for language_eval in LANGUAGES:
-                    print(f"------EVAL LANG {language_eval}------")
-                    accuracy, std, df_acc = calc_acc(
-                        df_inference, MAPPING[language_eval], "hate_prediction")
-                    print("Accuracy: {}\nStandard Deviation: {}".format(
-                        accuracy, std))
+            print(f"\n----Processing File: {file} (Input Language: {language})-----")
+            
+            folder_path = os.path.join(root, file)
+            df_inference = pd.read_csv(folder_path)
+
+            # --- Start Processing ---
+            df_inference.rename(columns={'ID': 'Meme ID'}, inplace=True)
+            df_inference['Meme ID'] = df_inference['Meme ID'].apply(lambda x: os.path.basename(str(x)))
+            df_inference['answer'] = df_inference['response'].apply(
+                extract_answer)
+            df_inference['processed_answer'] = df_inference['response'].apply(
+                mapping_response)
+            df_inference['hate_prediction'] = df_inference.apply(
+                process_response_to_hatespeech, axis=1)
+            
+            # This line is just for cleaner debug printing, not essential
+            df_inference['response'] = df_inference["response"].str.replace(
+                "\n", "").str.replace("assistant", "").str[-20:]
+            
+            df_inference = df_inference[[
+                "Meme ID", "prompt", "response", "answer", "hate_prediction"]]
+            
+            # --- Start Evaluation ---
+            df_inference["Meme ID"] = df_inference["Meme ID"].astype(str)
+            df_inference_merged = pd.merge(df_inference, df_gt, on="Meme ID")
+            
+            # N Invalid Responses
+            n_invalid = sum(df_inference_merged["hate_prediction"] == -1)
+            print(f"Invalid/Unparsable Responses: {n_invalid}")
+
+            # --- NEW: Save Per-Meme Accuracy CSV ---
+            print("--- Calculating and saving per-meme accuracy... ---")
+            
+            # 1. Get a clean base of all unique Meme IDs in this file
+            per_meme_results_df = df_inference_merged[['Meme ID']].drop_duplicates().reset_index(drop=True)
+
+            # 2. Loop through languages to create dynamic columns
+            for lang_eval_csv in LANGUAGES:
+                country_code_csv = MAPPING[lang_eval_csv]
+                
+                if country_code_csv not in df_inference_merged.columns:
+                    print(f"Warning (per-meme CSV): GT column '{country_code_csv}' not found. Skipping.")
+                    continue
+                
+                # 3. Calculate per-meme accuracy for this GT column
+                per_meme_acc_df = calculate_per_meme_accuracy(
+                    df_inference_merged, country_code_csv, "hate_prediction")
+                
+                # 4. Add this result as a new column
+                per_meme_results_df = pd.merge(per_meme_results_df, per_meme_acc_df, on='Meme ID', how='left')
+
+            # 5. Define and save the output file
+            # (Saves it next to the 'responses_xx.csv' file)
+            output_filename = os.path.join(root, f"per_meme_acc_{language}.csv")
+            per_meme_results_df.to_csv(output_filename, index=False, float_format='%.2f')
+            print(f"✅ Successfully saved per-meme accuracy to {output_filename}")
+            # --- END OF NEW SECTION ---
+
+            # Accuracy
+            for language_eval in LANGUAGES:
+                country_code = MAPPING[language_eval]
+                if country_code not in df_inference_merged.columns:
+                    print(f"Warning: Ground truth column '{country_code}' not found. Skipping eval for {language_eval}.")
+                    continue
+
+                print(f"------EVAL vs. {country_code} ({language_eval}) labels------")
+                accuracy, std, df_acc = calc_acc(
+                    df_inference_merged, country_code, "hate_prediction")
+                print(f"Accuracy: {accuracy}\nStandard Deviation: {std}")
