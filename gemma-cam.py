@@ -260,16 +260,34 @@ def main(args):
         caption_text = row['Template Name']
         caption = row['Translation'] 
         
-        image_dir = os.path.join(args.data_dir, 'memes', args.lang)
-        img_path = os.path.join(image_dir, f"{args.meme_id}.jpg")
+        # image_dir = os.path.join(args.data_dir, 'memes', args.lang)
+        # img_path = os.path.join(image_dir, f"{args.meme_id}.jpg")
         
-        if not os.path.exists(img_path):
-             image_dir_fallback = os.path.join(args.data_dir, 'memes', args.lang, caption_text.replace(" ", "-"))
-             img_path = os.path.join(image_dir_fallback, f"{args.meme_id}.jpg")
-             if not os.path.exists(img_path):
-                 print(f"Error: Could not find image file at {img_path} or in primary dir.")
-                 sys.exit(1)
+        # if not os.path.exists(img_path):
+        #      image_dir_fallback = os.path.join(args.data_dir, 'memes', args.lang, caption_text.replace(" ", "-"))
+        #      img_path = os.path.join(image_dir_fallback, f"{args.meme_id}.jpg")
+        #      if not os.path.exists(img_path):
+        #          print(f"Error: Could not find image file at {img_path} or in primary dir.")
+        #          sys.exit(1)
 
+        image_root = os.path.join(args.data_dir, "memes", args.lang)
+
+        found = None
+        meme_id_str = str(args.meme_id)
+
+        for root, _, files in os.walk(image_root):
+            for f in files:
+                name, ext = os.path.splitext(f)
+                if name == meme_id_str and ext.lower() in (".jpg", ".jpeg", ".png"):
+                    found = os.path.join(root, f)
+                    break
+            if found:
+                break
+
+        if not found:
+            print(f"Error: Could not find image file for meme {args.meme_id} under {image_root}")
+            sys.exit(1)
+        img_path = found
         image_pil = Image.open(img_path).convert("RGB")
         print(f"Loaded {args.meme_id}: {caption_text}")
 
