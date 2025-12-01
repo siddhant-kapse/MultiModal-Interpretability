@@ -1,15 +1,15 @@
 # Copy of Multi3Hate: Multimodal, Multilingual, and Multicultural Hate Speech Detection with Vision–Language Models
 
-## Update 7-Nov
-sample-cam-grad.py File contains working Grad-cam code for a single image on Qwen/Qwen2.5-VL-3B-Instruct Model.
-TODOS
- - Need to build full pipeline for this Model.
- - More imporvements in the Grad analyser code
- - Replicate the similar pipeline foe llama4:17b-scout-16e-instruct-q4_K_M
+## Update Dec-1st
+
+new file:   accuracy.py -  The logic of EXTRACTING the meme-id for correctly classified Hate/Non-hate meme above certain threshold(80% is used)
+new file:   roughy-g.py | roughy-q.py - Logic of getting the last layer information during forward pass for gemma and qwen model resp.
+new file:   mean2.py | variance.py - Logic to find top-k neurons to ablate.
+new file:   killer-neurons-gemma.py | killer-neurons-qwen.py - Prototype code for the ablation of selected neurons for gemma and qwen model resp.
+new file:   t-test.py - Advance t-test Logic(IGNORE)
 
 
-
-## 🗂️ Dataset Structure
+## 🗂️ Dataset Structure    
 The dataset is organized in the `data/` folder:
 
 - **Images**: `data/memes/` - Meme images categorized by language in subfolders.
@@ -20,17 +20,9 @@ The dataset is organized in the `data/` folder:
 ## 🚀 Running VLM Inference
 
 ### 1. Model Inference
-Use the scripts in `vlm/inference/` to run inference with Vision-Language Models (VLMs). Below are commands for each available model:
+Use the scripts in `vlm/inference/` to run inference with Vision-Language Models (VLMs). Below are commands for the used models:
 
 ```bash
 python vlm/inference/qwen2.py 
 python vlm/inference/gemini_pro.py
-```
-
-## 📈 Model Evaluation
-
-To evaluate model predictions, use this command, replacing `<folder>` with the path to your model's prediction folder:
-
-```bash
-python vlm/evaluation/eval --model_predictions <folder>
 ```
