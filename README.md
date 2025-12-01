@@ -3,9 +3,13 @@
 ## Update Dec-1st
 
 new file:   accuracy.py -  The logic of EXTRACTING the meme-id for correctly classified Hate/Non-hate meme above certain threshold(80% is used)
+
 new file:   roughy-g.py | roughy-q.py - Logic of getting the last layer information during forward pass for gemma and qwen model resp.
+
 new file:   mean2.py | variance.py - Logic to find top-k neurons to ablate.
+
 new file:   killer-neurons-gemma.py | killer-neurons-qwen.py - Prototype code for the ablation of selected neurons for gemma and qwen model resp.
+
 new file:   t-test.py - Advance t-test Logic(IGNORE)
 
 
